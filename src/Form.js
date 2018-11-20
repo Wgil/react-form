@@ -102,9 +102,7 @@ class Form extends React.Component {
     return (
       <form onSubmit={handleSubmit} {...restProps}>
         <FormContext.Provider value={state}>
-          {typeof children === "function"
-            ? children({ errors: state.errors })
-            : children}
+          {typeof children === "function" ? children(state) : children}
         </FormContext.Provider>
       </form>
     );

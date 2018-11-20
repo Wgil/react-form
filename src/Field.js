@@ -6,7 +6,7 @@ class Field extends React.Component {
   static propTypes = {
     name: PropTypes.string.isRequired,
     rules: PropTypes.object,
-    onChange: PropTypes.func.isRequired
+    onChange: PropTypes.func
   };
   static defaultProps = {
     rules: {},
