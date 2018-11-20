@@ -1,23 +1,33 @@
 import React from "react";
 import PropTypes from "prop-types";
-import approve from "approvejs";
 import FormContext from "./FormContext";
 import Field from "./Field";
 
 class Form extends React.Component {
+  static defaultProps = {
+    clearOnSubmit: false,
+    validate: (fields, helpers) => {}
+  };
+
+  static propTypes = {
+    validate: PropTypes.func.isRequired,
+    onSubmit: PropTypes.func.isRequired,
+    clearOnSubmit: PropTypes.bool
+  };
+
   onChange = (field, value) => {
     this.setState(
       currentState => ({
-        fields: { ...currentState.fields, [field]: value }
+        fields: { ...currentState.fields, [field]: value },
+        pristine: { ...currentState.pristine, [field]: false }
       }),
-      () => this.validate(field, value)
+      () => this.validate()
     );
   };
 
-  initializeField = (name, value = "", rules) => {
+  initializeField = (name, value = "") => {
     this.setState(currentState => ({
       fields: { ...currentState.fields, ...{ [name]: value } },
-      rules: { ...currentState.rules, ...{ [name]: rules } },
       pristine: { ...currentState.pristine, ...{ [name]: true } }
     }));
   };
@@ -25,7 +35,6 @@ class Form extends React.Component {
   state = {
     fields: {},
     errors: {},
-    rules: {},
     pristine: {},
     onChange: this.onChange,
     initializeField: this.initializeField
@@ -47,29 +56,9 @@ class Form extends React.Component {
     });
   };
 
-  validate = (name, value, callback = () => {}) => {
-    const rules = this.state.rules[name];
-
-    // In order to make the approvejs equal rule works, we need to do this.
-    if (rules.equal && rules.equal.value) {
-      rules.equal.value = this.state.fields[rules.equal.value];
-    }
-
-    this.setState(currentState => {
-      const { errors } = approve.value(value, { ...rules, stop: true });
-      const errorsState = { ...currentState.errors };
-
-      if (errors.length) {
-        errorsState[name] = errors[0];
-      } else {
-        delete errorsState[name];
-      }
-
-      return {
-        errors: errorsState,
-        pristine: { ...currentState.pristine, [name]: false }
-      };
-    }, callback);
+  validate = (callback = () => {}) => {
+    const errors = this.props.validate(this.state.fields, this.state) || {};
+    this.setState({ errors }, callback);
   };
 
   submit = () => {
@@ -85,11 +74,19 @@ class Form extends React.Component {
 
     const isPristine = Object.values(this.state.pristine).some(field => field);
 
-    if (!isPristine) return this.submit();
+    if (isPristine) {
+      const pristine = Object.keys(this.state.pristine).reduce(
+        (fields, field) => {
+          fields[field] = false;
+          return fields;
+        },
+        {}
+      );
+      this.setState({ pristine }, () => this.validate(this.submit));
+      return;
+    }
 
-    Object.entries(this.state.fields).forEach(([field, value]) => {
-      this.validate(field, value, this.submit);
-    });
+    this.submit();
   };
 
   render() {
@@ -108,14 +105,5 @@ class Form extends React.Component {
     );
   }
 }
-
-Form.defaultProps = {
-  clearOnSubmit: false
-};
-
-Form.propTypes = {
-  onSubmit: PropTypes.func.isRequired,
-  clearOnSubmit: PropTypes.bool
-};
 
 export { Form as default, Field };

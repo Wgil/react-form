@@ -5,19 +5,17 @@ import FormContext from "./FormContext";
 class Field extends React.Component {
   static propTypes = {
     name: PropTypes.string.isRequired,
-    rules: PropTypes.object,
     onChange: PropTypes.func
   };
   static defaultProps = {
-    rules: {},
     initialValue: "",
     onChange: () => {}
   };
   static contextType = FormContext;
 
   componentDidMount() {
-    const { name, initialValue, rules } = this.props;
-    this.context.initializeField(name, initialValue, rules);
+    const { name, initialValue } = this.props;
+    this.context.initializeField(name, initialValue);
   }
 
   render() {
@@ -25,7 +23,6 @@ class Field extends React.Component {
       name,
       value,
       onChange,
-      rules,
       initializeField,
       initialValue,
       ...restProps
